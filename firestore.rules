@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow public users to create requests but not read them
+    match /requests/{request} {
+      allow create: if true;
+      allow read, update, delete: if isAuthorizedAdmin();
+    }
+    
+    // Admin user profiles
+    match /admins/{adminId} {
+      allow read: if request.auth != null && request.auth.uid == adminId;
+      allow write: if isSuperAdmin();
+    }
+    
+    // Helper functions
+    function isAuthorizedAdmin() {
+      return request.auth != null && 
+             get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role in ['super_admin', 'admin', 'viewer'];
+    }
+    
+    function isSuperAdmin() {
+      return request.auth != null && 
+             get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'super_admin';
+    }
+  }
+}
