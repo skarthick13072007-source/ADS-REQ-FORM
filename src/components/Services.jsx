@@ -12,13 +12,13 @@ const services = [
     icon: <Layout className="h-8 w-8 text-blue-500" />,
     title: "Website Development",
     description: "Modern, fast, and secure websites tailored for your business growth.",
-    price: "₹14,999",
+    price: "₹999",
   },
   {
     icon: <Briefcase className="h-8 w-8 text-indigo-500" />,
     title: "Portfolio Websites",
     description: "Showcase your professional skills with a stunning personal brand.",
-    price: "₹4,999",
+    price: "1,999",
   },
   {
     icon: <Cpu className="h-8 w-8 text-emerald-500" />,
@@ -30,13 +30,13 @@ const services = [
     icon: <Zap className="h-8 w-8 text-amber-500" />,
     title: "Embedded Systems",
     description: "Custom firmware and hardware integration for specialized applications.",
-    price: "₹7,999",
+    price: "₹1,999",
   },
   {
     icon: <Radio className="h-8 w-8 text-purple-500" />,
     title: "IoT Projects",
     description: "Smart connected solutions with real-time data monitoring and control.",
-    price: "₹9,999",
+    price: "₹8999",
   },
   {
     icon: <Code className="h-8 w-8 text-rose-500" />,

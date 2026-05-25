@@ -33,7 +33,7 @@ import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminDashboard = () => {
-  const { logout, userData, isSuperAdmin } = useAuth();
+  const { logout, userData, isSuperAdmin, isAdmin, dbStatus } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,6 +46,59 @@ const AdminDashboard = () => {
       console.error(err);
     }
   };
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex flex-col items-center justify-center p-8 text-center">
+        <div className="bg-amber-500/10 p-10 rounded-[2.5rem] mb-8">
+          <Shield size={64} className="text-amber-500 mx-auto" />
+        </div>
+        <h1 className="text-3xl font-black dark:text-white mb-4">Final Setup Step</h1>
+        <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6 leading-relaxed font-medium">
+          You have successfully logged in, but your account is not yet an Admin in the database.
+        </p>
+        
+        <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 mb-10 w-full max-w-md">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-left">Your Unique Admin ID (UID)</p>
+          <div className="flex items-center justify-between bg-slate-100 dark:bg-black/20 p-3 rounded-xl">
+            <code className="text-blue-600 dark:text-blue-400 font-bold break-all text-sm">{useAuth().currentUser?.uid}</code>
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(useAuth().currentUser?.uid);
+                alert('UID Copied! Now paste this as the Document ID in your "admins" collection.');
+              }}
+              className="ml-4 p-2 hover:bg-blue-500/10 rounded-lg text-blue-600 transition-all"
+              title="Copy UID"
+            >
+              <FileText size={18} />
+            </button>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-3 text-left leading-relaxed">
+            Copy this ID and use it as the **Document ID** in your Firestore <b>'admins'</b> collection.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <a 
+            href="https://console.firebase.google.com/project/alpha-digitronix/firestore/data"
+            target="_blank"
+            rel="noreferrer"
+            className="gradient-button px-8 py-4 rounded-2xl font-bold flex items-center justify-center space-x-3"
+          >
+            <ExternalLink size={20} />
+            <span>Open Firebase Console</span>
+          </a>
+          <button 
+            onClick={handleLogout}
+            className="bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white px-8 py-4 rounded-2xl font-bold flex items-center justify-center space-x-3"
+          >
+            <LogOut size={20} />
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Safe header title logic
   const getHeaderTitle = () => {
@@ -126,9 +179,25 @@ const AdminDashboard = () => {
                 className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500 w-64 transition-all"
               />
             </div>
-            <div className="flex items-center space-x-3 bg-emerald-500/10 px-4 py-2 rounded-full border border-emerald-500/20">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Secure Server Online</span>
+            <div className={`flex items-center space-x-3 px-4 py-2 rounded-full border ${
+              dbStatus === 'online' ? 'bg-emerald-500/10 border-emerald-500/20' : 
+              dbStatus === 'checking' ? 'bg-amber-500/10 border-amber-500/20' : 
+              'bg-red-500/10 border-red-500/20'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                dbStatus === 'online' ? 'bg-emerald-500 animate-pulse' : 
+                dbStatus === 'checking' ? 'bg-amber-500 animate-bounce' : 
+                'bg-red-500'
+              }`}></div>
+              <span className={`text-[10px] font-bold uppercase tracking-widest ${
+                dbStatus === 'online' ? 'text-emerald-600 dark:text-emerald-400' : 
+                dbStatus === 'checking' ? 'text-amber-600 dark:text-amber-400' : 
+                'text-red-600 dark:text-red-400'
+              }`}>
+                {dbStatus === 'online' ? 'Secure Server Online' : 
+                 dbStatus === 'checking' ? 'Connecting to Database...' : 
+                 'Database Offline'}
+              </span>
             </div>
           </div>
         </header>
@@ -336,6 +405,14 @@ const RequestsTable = () => {
     }
   };
 
+  const updatePayment = async (id, field, value) => {
+    try {
+      await updateDoc(doc(db, 'requests', id), { [field]: value });
+    } catch (err) {
+      console.error('Error updating payment:', err);
+    }
+  };
+
   const deleteRequest = async (id) => {
     if (window.confirm('WARNING: Are you sure you want to permanently delete this request? This action cannot be undone.')) {
       try {
@@ -360,6 +437,8 @@ const RequestsTable = () => {
       'Budget': r.budget,
       'Deadline': r.deadline,
       'Status': r.status,
+      'Payment Amount': r.paymentAmount || '0',
+      'Payment Status': r.paymentStatus || 'Unpaid',
       'Description': r.description,
       'Required Features': r.features,
       'Notes': r.notes,
@@ -432,6 +511,7 @@ const RequestsTable = () => {
                 <th className="px-8 py-6">Client & Company</th>
                 <th className="px-8 py-6">Project Info</th>
                 <th className="px-8 py-6">Timeline & Budget</th>
+                <th className="px-8 py-6">Payments (Admin)</th>
                 <th className="px-8 py-6">Status Control</th>
                 <th className="px-8 py-6 text-right">Secure Actions</th>
               </tr>
@@ -482,6 +562,31 @@ const RequestsTable = () => {
                         <TrendingUp size={14} className="mr-2" />
                         {req.budget}
                       </div>
+                    </div>
+                  </td>
+                  <td className="px-8 py-7">
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">₹</span>
+                        <input 
+                          type="text"
+                          placeholder="0.00"
+                          value={req.paymentAmount || ''}
+                          onChange={(e) => updatePayment(req.id, 'paymentAmount', e.target.value)}
+                          className="w-24 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg pl-6 pr-2 py-1.5 text-xs font-bold focus:outline-none focus:border-blue-500 transition-all"
+                        />
+                      </div>
+                      <select 
+                        value={req.paymentStatus || 'Unpaid'}
+                        onChange={(e) => updatePayment(req.id, 'paymentStatus', e.target.value)}
+                        className={`text-[10px] font-black px-3 py-1.5 rounded-lg border-none focus:ring-0 cursor-pointer uppercase tracking-widest ${
+                          req.paymentStatus === 'Paid' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600'
+                        }`}
+                      >
+                        <option value="Unpaid">Unpaid</option>
+                        <option value="Partial">Partial</option>
+                        <option value="Paid">Paid</option>
+                      </select>
                     </div>
                   </td>
                   <td className="px-8 py-7">

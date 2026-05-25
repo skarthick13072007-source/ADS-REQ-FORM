@@ -15,8 +15,8 @@ const formSchema = z.object({
   whatsapp: z.string().min(10, 'Valid WhatsApp number is required'),
   companyCollege: z.string().min(2, 'Company or College name is required'),
   projectType: z.string().min(1, 'Please select a project type'),
-  description: z.string().min(20, 'Please provide a more detailed description'),
-  features: z.string().min(10, 'Please list required features'),
+  description: z.string().min(2, 'Please provide a more detailed description'),
+  features: z.string().min(1, 'Please list required features'),
   budget: z.string().min(1, 'Budget range is required'),
   deadline: z.string().min(1, 'Deadline is required'),
   referenceLink: z.string().url('Invalid URL').or(z.literal('')),
@@ -109,12 +109,12 @@ const RequestForm = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <label className="form-label">Full Name *</label>
-                <input {...register('fullName')} className="form-input" placeholder="John Doe" />
+                <input {...register('fullName')} className="form-input" placeholder="Enter your name" />
                 {errors.fullName && <p className="text-red-500 text-xs">{errors.fullName.message}</p>}
               </div>
               <div className="space-y-2">
                 <label className="form-label">Email Address *</label>
-                <input {...register('email')} className="form-input" placeholder="john@example.com" />
+                <input {...register('email')} className="form-input" placeholder="name@example.com" />
                 {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
               </div>
             </div>
@@ -142,6 +142,7 @@ const RequestForm = () => {
                 <label className="form-label">Project Type *</label>
                 <select {...register('projectType')} className="form-input appearance-none">
                   <option value="">Select Type</option>
+                   <option value="internship">Internship program</option>
                   <option value="website">Website Development</option>
                   <option value="pcb">PCB Design</option>
                   <option value="embedded">Embedded Systems</option>
@@ -184,17 +185,10 @@ const RequestForm = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <label className="form-label">Reference Website Link</label>
-                <input {...register('referenceLink')} className="form-input" placeholder="https://example.com" />
-                {errors.referenceLink && <p className="text-red-500 text-xs">{errors.referenceLink.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <label className="form-label">Deadline *</label>
-                <input type="date" {...register('deadline')} className="form-input" />
-                {errors.deadline && <p className="text-red-500 text-xs">{errors.deadline.message}</p>}
-              </div>
+            <div className="space-y-2">
+              <label className="form-label">Reference Website Link</label>
+              <input {...register('referenceLink')} className="form-input" placeholder="https://example.com" />
+              {errors.referenceLink && <p className="text-red-500 text-xs">{errors.referenceLink.message}</p>}
             </div>
 
             <div className="space-y-2">

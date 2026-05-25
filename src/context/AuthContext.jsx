@@ -11,20 +11,49 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dbStatus, setDbStatus] = useState('checking'); // 'checking', 'online', 'offline'
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setCurrentUser(user);
-        const userDoc = await getDoc(doc(db, 'admins', user.uid));
-        if (userDoc.exists()) {
-          setUserData(userDoc.data());
+    // Check Firebase Connection
+    const checkConnection = async () => {
+      try {
+        // Try to fetch a doc. 
+        // If it's a permission error, it means we ARE connected to Firebase!
+        await getDoc(doc(db, '_connection_test_', 'test'));
+        setDbStatus('online');
+      } catch (error) {
+        // 'permission-denied' means the server is reached but rules blocked us (which is good!)
+        if (error.code === 'permission-denied' || error.message?.includes('permission')) {
+          setDbStatus('online');
+        } else {
+          console.error('Firebase Connection Error:', error);
+          setDbStatus('offline');
         }
-      } else {
-        setCurrentUser(null);
-        setUserData(null);
       }
-      setLoading(false);
+    };
+    checkConnection();
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      try {
+        if (user) {
+          setCurrentUser(user);
+          const userDoc = await getDoc(doc(db, 'admins', user.uid));
+          if (userDoc.exists()) {
+            setUserData(userDoc.data());
+          } else {
+            console.warn('User logged in but not found in admins collection');
+            setUserData(null);
+          }
+        } else {
+          setCurrentUser(null);
+          setUserData(null);
+        }
+      } catch (error) {
+        console.error('Error fetching admin data:', error);
+        setUserData(null);
+      } finally {
+        setLoading(false);
+      }
     });
 
     return unsubscribe;
@@ -43,6 +72,7 @@ export const AuthProvider = ({ children }) => {
     userData,
     login,
     logout,
+    dbStatus,
     isAdmin: !!userData,
     isSuperAdmin: userData?.role === 'super_admin'
   };

@@ -21,7 +21,7 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router>
+      <Router basename="/ADS-WEBSITE">
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/admin/login" element={<AdminLogin />} />

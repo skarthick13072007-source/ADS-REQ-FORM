@@ -9,7 +9,7 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, dbStatus } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -21,14 +21,14 @@ const AdminLogin = () => {
       navigate('/admin');
     } catch (err) {
       // Show specific Firebase error messages
-      if (err.code === 'auth/user-not-found') {
-        setError('No admin found with this email.');
-      } else if (err.code === 'auth/wrong-password') {
-        setError('Incorrect password.');
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('Invalid email or password. Please check your credentials.');
       } else if (err.code === 'auth/invalid-email') {
         setError('The email address is not valid.');
       } else if (err.code === 'auth/operation-not-allowed') {
         setError('Email/Password login is not enabled in Firebase Console.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many failed login attempts. Please try again later.');
       } else {
         setError('Login failed: ' + err.message);
       }
@@ -65,6 +65,21 @@ const AdminLogin = () => {
           </div>
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Admin Portal</h1>
           <p className="text-slate-600 dark:text-slate-400 mt-2">Sign in to manage secure client requests</p>
+          
+          <div className="mt-4 flex justify-center">
+            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-widest ${
+              dbStatus === 'online' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 
+              dbStatus === 'checking' ? 'bg-amber-500/10 border-amber-500/20 text-amber-600' : 
+              'bg-red-500/10 border-red-500/20 text-red-600'
+            }`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${
+                dbStatus === 'online' ? 'bg-emerald-500' : 
+                dbStatus === 'checking' ? 'bg-amber-500 animate-pulse' : 
+                'bg-red-500'
+              }`}></div>
+              <span>{dbStatus === 'online' ? 'Firebase Connected' : dbStatus === 'checking' ? 'Checking Firebase...' : 'Firebase Disconnected'}</span>
+            </div>
+          </div>
         </div>
 
         <div className="glass-card p-8 md:p-10 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-2xl relative">
