@@ -2,7 +2,7 @@
   "name": "alpha-digitronix-solutions",
   "private": true,
   "version": "1.0.0",
-  "homepage": "https://skarthick13072007-source.github.io/ADS-WEBSITE",
+  "homepage": "https://skarthick13072007-source.github.io/ADS-REQ-FORM",
   "type": "module",
 "scripts": {
   "dev": "vite",
